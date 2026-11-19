@@ -119,7 +119,7 @@ cp .env.example .env.local
 *(Configure `GITHUB_CLIENT_ID`, `SMTP_USER`, and `SMTP_APP_PASSWORD` as needed).*
 
 ### 3. Run Automated Tests
-```bash
+```bash 
 npm test
 ```
 All 8 test suites will execute:
