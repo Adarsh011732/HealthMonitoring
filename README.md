@@ -37,8 +37,8 @@ npm test
 
 # 3. Start local server with hot-reloading
 npm run dev
-# Server runs on http://localhost:3000
-# Health check: http://localhost:3000/health
+# Server runs on http://localhost:3001
+# Health check: http://localhost:3001/health
 ```
 
 ---
