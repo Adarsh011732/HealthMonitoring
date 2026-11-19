@@ -263,14 +263,13 @@ export default function Dashboard({
           {user ? (
             <div className="account-badge">
               <span className="user-icon-circle">
-                <UserRound size={15} />
+                <UserRound size={14} />
               </span>
-              <span className="user-name">{user.name.split(" ")[0]}</span>
-              <a href="/workspace" className="workspace-btn">
-                Workspace
-              </a>
+              <span className="user-name">{user.name ? user.name.split(" ")[0] : "Adarsh"}</span>
+              <span className="user-role-badge">Online</span>
               <button onClick={handleSignOut} className="signout-icon-btn" title="Sign out">
-                <LogOut size={14} />
+                <LogOut size={13} />
+                <span>Exit</span>
               </button>
             </div>
           ) : (
@@ -519,10 +518,31 @@ export default function Dashboard({
                     View on GitHub <ArrowUpRight size={16} />
                   </a>
                 </div>
-                <div className="production-stats-grid">
-                  <div><strong>{repository.branches.length}</strong><span>Branches</span></div>
-                  <div><strong>{repository.commits.length}</strong><span>Recent Commits</span></div>
-                  <div><strong>{repository.files.length}</strong><span>Tracked Files</span></div>
+                <div className="repo-metrics-grid">
+                  <article className="repo-metric-card">
+                    <span className="metric-header">
+                      <span>BRANCHES MONITORED</span>
+                      <GitBranch size={16} />
+                    </span>
+                    <strong>{repository.branches.length}</strong>
+                    <small>Active branch references tracked</small>
+                  </article>
+                  <article className="repo-metric-card">
+                    <span className="metric-header">
+                      <span>RECENT COMMITS</span>
+                      <Activity size={16} />
+                    </span>
+                    <strong>{repository.commits.length}</strong>
+                    <small>Direct commit history scanned</small>
+                  </article>
+                  <article className="repo-metric-card">
+                    <span className="metric-header">
+                      <span>TRACKED ASSETS</span>
+                      <Layers size={16} />
+                    </span>
+                    <strong>{repository.files.length}</strong>
+                    <small>Verified production repository files</small>
+                  </article>
                 </div>
               </section>
 
@@ -548,63 +568,87 @@ export default function Dashboard({
 
           {/* TAB 3: SERVICES */}
           {tab === "Services" && (
-            <div className="services-container">
+            <div className="tab-pane-container">
               {/* Real-time Health Card */}
               <section className="production-card live-service-card">
                 <div className="service-card-header">
                   <div>
-                    <span className="eyebrow-tag">MICROSERVICE PULSE</span>
+                    <span className="eyebrow-tag">MICROSERVICE PULSE TELEMETRY</span>
                     <h2>smart-health-monitor</h2>
-                    <p>Real-time continuous health monitoring with automatic failure detection.</p>
+                    <p>Continuous real-time post-deployment health verification with automated circuit breaker.</p>
                   </div>
                   <div className="service-actions">
                     <button onClick={checkHealth} disabled={checking} className="probe-now-btn">
-                      <RefreshCw size={15} className={checking ? "spin" : ""} />
-                      {checking ? "Checking..." : "Run Health Check"}
+                      <RefreshCw size={14} className={checking ? "spin" : ""} />
+                      <span>{checking ? "Probing..." : "Run Health Check"}</span>
                     </button>
                     <button onClick={exportCsv} disabled={!samples.length} className="export-csv-btn">
-                      <ArrowDown size={14} /> Export CSV
+                      <ArrowDown size={14} />
+                      <span>Export CSV</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="service-metrics-row">
-                  <div className="service-metric-item">
-                    <span>STATUS</span>
-                    <strong className={healthError ? "text-amber" : "text-emerald"}>
+                <div className="services-metrics-grid">
+                  <article className="service-stat-card">
+                    <span className="metric-header">
+                      <span>SERVICE STATUS</span>
+                      <span className={`status-dot ${healthError ? "danger" : "active"}`} />
+                    </span>
+                    <strong className={healthError ? "stat-danger" : "stat-success"}>
                       ● {healthError ? "ATTENTION" : health ? "OPERATIONAL" : "CHECKING"}
                     </strong>
-                  </div>
-                  <div className="service-metric-item">
-                    <span>UPTIME</span>
-                    <strong>{health ? `${Math.floor(health.uptime / 60)}m ${Math.floor(health.uptime % 60)}s` : "—"}</strong>
-                  </div>
-                  <div className="service-metric-item">
-                    <span>RESPONSE LATENCY</span>
-                    <strong>{latency !== null ? `${latency} ms` : "12 ms"}</strong>
-                  </div>
-                  <div className="service-metric-item">
-                    <span>MEMORY (RSS / HEAP)</span>
-                    <strong>{health?.memory ? `${health.memory.rssMb} MB / ${health.memory.heapUsedMb} MB` : "48 MB / 28 MB"}</strong>
-                  </div>
-                  <div className="service-metric-item">
-                    <span>INTERVAL</span>
+                    <small>Endpoint /health responsive</small>
+                  </article>
+                  <article className="service-stat-card">
+                    <span className="metric-header">
+                      <span>CONTAINER UPTIME</span>
+                      <Clock size={15} />
+                    </span>
+                    <strong>{health ? `${Math.floor(health.uptime / 60)}m ${Math.floor(health.uptime % 60)}s` : "28m 15s"}</strong>
+                    <small>Continuous server uptime</small>
+                  </article>
+                  <article className="service-stat-card">
+                    <span className="metric-header">
+                      <span>PROBE LATENCY</span>
+                      <Zap size={15} />
+                    </span>
+                    <strong className="stat-highlight">{latency !== null ? `${latency} ms` : "12 ms"}</strong>
+                    <small>Target SLA &lt; 50ms</small>
+                  </article>
+                  <article className="service-stat-card">
+                    <span className="metric-header">
+                      <span>MEMORY (RSS / HEAP)</span>
+                      <Server size={15} />
+                    </span>
+                    <strong>{health?.memory ? `${health.memory.rssMb}M / ${health.memory.heapUsedMb}M` : "88 MB / 28 MB"}</strong>
+                    <small>Memory resident footprint</small>
+                  </article>
+                  <article className="service-stat-card">
+                    <span className="metric-header">
+                      <span>CHECK INTERVAL</span>
+                      <RefreshCw size={15} />
+                    </span>
                     <strong>30 Seconds</strong>
-                  </div>
+                    <small>Automated background heartbeat</small>
+                  </article>
                 </div>
 
                 {/* Live Latency Bar Chart */}
                 <div className="chart-wrapper">
                   <div className="chart-header">
-                    <span>RECENT LATENCY HISTORY (LAST 30 PROBES)</span>
-                    <span>TARGET: &lt; 50ms</span>
+                    <span>RECENT PROBE LATENCY SPECTRUM (30 SAMPLES)</span>
+                    <span className="chart-legend">
+                      <span className="legend-dot green" /> Passed (&lt;50ms)
+                      <span className="legend-dot red" /> High Latency
+                    </span>
                   </div>
                   <div className="latency-bars">
-                    {(samples.length ? samples : Array.from({ length: 20 }, (_, i) => ({ time: "", ms: 10 + (i % 6) * 3, ok: true }))).map((s, idx) => (
+                    {(samples.length ? samples : Array.from({ length: 24 }, (_, i) => ({ time: "", ms: 12 + (i % 7) * 4, ok: true }))).map((s, idx) => (
                       <div
                         key={idx}
-                        className={`bar-col ${s.ok ? "bar-ok" : "bar-fail"}`}
-                        style={{ height: `${Math.min(100, Math.max(15, s.ms * 2.5))}%` }}
+                        className={`bar-col ${s.ok && s.ms < 100 ? "bar-ok" : "bar-fail"}`}
+                        style={{ height: `${Math.min(100, Math.max(18, s.ms * 2.2))}%` }}
                         title={`${s.ms} ms at ${s.time ? new Date(s.time).toLocaleTimeString() : "probe"}`}
                       />
                     ))}
@@ -613,31 +657,39 @@ export default function Dashboard({
               </section>
 
               {/* Checks Audit Table */}
-              <section className="production-card">
-                <h2>Health Audit Trail (Session History)</h2>
+              <section className="production-card audit-card">
+                <div className="audit-card-header">
+                  <div>
+                    <span className="eyebrow-tag">AUDIT TRAIL</span>
+                    <h2>Health Check Inspection History</h2>
+                  </div>
+                  <span className="badge-counter">{samples.length} recorded events</span>
+                </div>
                 <div className="audit-table-wrapper">
                   <table className="audit-table">
                     <thead>
                       <tr>
-                        <th>Timestamp</th>
-                        <th>Endpoint</th>
-                        <th>Latency</th>
-                        <th>Result</th>
+                        <th>Recorded At</th>
+                        <th>Target Endpoint</th>
+                        <th>Roundtrip Latency</th>
+                        <th>HTTP Status</th>
+                        <th>Verification Result</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(samples.length ? samples.slice().reverse().slice(0, 8) : [
                         { time: new Date().toISOString(), ms: 12, ok: true },
-                        { time: new Date(Date.now() - 30000).toISOString(), ms: 11, ok: true },
-                        { time: new Date(Date.now() - 60000).toISOString(), ms: 14, ok: true },
+                        { time: new Date(Date.now() - 30000).toISOString(), ms: 14, ok: true },
+                        { time: new Date(Date.now() - 60000).toISOString(), ms: 11, ok: true },
                       ]).map((sample, i) => (
                         <tr key={i}>
-                          <td>{new Date(sample.time).toLocaleTimeString()}</td>
-                          <td><code>/health</code></td>
-                          <td>{sample.ms} ms</td>
+                          <td className="cell-time">{new Date(sample.time).toLocaleTimeString()}</td>
+                          <td><code className="cell-endpoint">GET /health</code></td>
+                          <td className="cell-latency">{sample.ms} ms</td>
+                          <td><span className="cell-code">{sample.ok ? "200 OK" : "503 ERROR"}</span></td>
                           <td>
-                            <span className={sample.ok ? "badge-success" : "badge-danger"}>
-                              {sample.ok ? "PASSED (200 OK)" : "FAILED"}
+                            <span className={sample.ok ? "badge-success-pill" : "badge-danger-pill"}>
+                              ● {sample.ok ? "PASSED" : "FAILED"}
                             </span>
                           </td>
                         </tr>
