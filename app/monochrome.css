@@ -1,0 +1,839 @@
+:root {
+  --bg: #090909;
+  --panel: #111;
+  --surface: #1c1c1c;
+  --border: #292929;
+  --text: #f7f7f7;
+  --muted: #a6a6a6;
+  --mint: #fff;
+  --amber: #ddd;
+}
+.repository-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.repository-workbench .commit-inspector {
+  position: sticky;
+  top: 20px;
+}
+.repository-bottom {
+  grid-template-columns: 1fr !important;
+}
+.repository-workbench .tree-ruler {
+  grid-template-columns: 190px 1fr;
+}
+.repository-workbench .tree-ruler span:last-child {
+  display: none;
+}
+.repository-workbench .tree-commit {
+  padding-left: 190px;
+}
+.repository-workbench .repo-controls {
+  margin-left: 0;
+}
+.tree-content {
+  min-width: 440px;
+}
+.tree-message small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 1250px) {
+  .repository-workbench {
+    grid-template-columns: 1fr;
+  }
+  .repository-workbench .commit-inspector {
+    position: static;
+  }
+}
+@media (max-width: 700px) {
+  .commit-tree-shell .tree-content {
+    min-width: 0;
+  }
+  .repository-workbench .tree-commit {
+    padding-left: 170px;
+  }
+  .tree-commit .tree-meta {
+    gap: 4px;
+  }
+  .tree-meta .tree-branch {
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tree-open {
+    display: none;
+  }
+}
+.graph-stage .graph-tools {
+  display: flex;
+  top: 6px;
+  bottom: auto;
+  right: 10px;
+}
+.graph-stage .graph-legend {
+  padding-right: 90px;
+}
+.graph-tools .icon-button {
+  background: #191919;
+  border-color: #444;
+  color: white;
+}
+body {
+  background: var(--bg);
+}
+.sidebar {
+  background: #0c0c0c;
+}
+.brand-mark {
+  background: white;
+  color: black;
+  border-radius: 4px;
+}
+.brand-dot {
+  color: white;
+}
+.workspace {
+  background: #121212;
+}
+.nav-item.active {
+  color: white;
+  background: #242424;
+}
+.nav-item.active:before {
+  background: #fff;
+}
+.primary-button {
+  background: #f6f6f6;
+  color: #090909;
+  border-color: #fff;
+}
+.primary-button:hover {
+  background: #ddd;
+}
+.source-strip {
+  background: #111;
+  border-color: #303030;
+}
+.source-strip > span {
+  color: #eee;
+}
+.source-strip p {
+  color: #aaa;
+}
+.source-strip button,
+.source-strip a {
+  color: white;
+}
+.source-dot {
+  background: white;
+}
+.panel {
+  background: #111;
+}
+.metric-card {
+  background: linear-gradient(145deg, #191919, #101010);
+}
+.metric-value.green {
+  color: white;
+}
+.metric-decoration {
+  opacity: 0.5;
+}
+.page-heading h1 {
+  font-weight: 500;
+  letter-spacing: -1.4px;
+}
+.eyebrow {
+  color: #b7b7b7;
+}
+.view-label {
+  background: #f0f0f0;
+  color: #111;
+  border-color: white;
+}
+.badge {
+  color: white;
+  border-color: #555;
+}
+.source-strip,
+.metric-card,
+.panel {
+  animation: surface-in 0.55s var(--ease-out) both;
+}
+.metric-card:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.metric-card:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.metric-card:nth-child(4) {
+  animation-delay: 0.18s;
+}
+.metric-card {
+  transition:
+    transform var(--motion-duration-base),
+    border-color var(--motion-duration-base);
+}
+.metric-card:hover {
+  transform: translateY(-4px);
+  border-color: #666;
+}
+.sidebar .nav-item {
+  transition:
+    background 0.2s,
+    color 0.2s,
+    transform 0.2s;
+}
+.sidebar .nav-item:hover {
+  transform: translateX(3px);
+}
+.status-dot {
+  background: #fff;
+  box-shadow: 0 0 0 3px #ffffff09;
+}
+.live-tag {
+  color: white;
+}
+.system-card {
+  background: #161616;
+}
+.environment {
+  color: #ddd;
+}
+.repo-name > svg {
+  color: white;
+}
+.repo-toolbar {
+  background: #141414;
+}
+.repo-controls {
+  flex-wrap: wrap;
+}
+.share-repo {
+  padding: 5px 8px;
+  min-height: 30px;
+  font-size: 10px;
+}
+.graph-stage {
+  height: 520px;
+  background: #0c0c0c;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-color: #303030;
+}
+.compact-tree .graph-stage {
+  height: 390px;
+}
+.graph-legend {
+  position: static;
+  min-height: 43px;
+  padding: 9px 18px;
+  gap: 18px;
+  align-items: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid #252525;
+  background: #101010;
+}
+.branch-label {
+  color: #aaa;
+}
+.branch-label span,
+.lane-1 span,
+.lane-2 span,
+.lane-3 span,
+.lane-4 span {
+  background: #eee;
+}
+.branch-label:nth-child(2) span {
+  background: transparent;
+  border: 1px solid white;
+}
+.branch-label:nth-child(3) span {
+  border-radius: 0;
+}
+.branch-label:nth-child(4) span {
+  transform: rotate(45deg);
+  border-radius: 0;
+}
+.branch-label:hover {
+  color: white;
+}
+.graph-caption {
+  display: none;
+}
+.graph-tools {
+  right: 12px;
+  bottom: 7px;
+  z-index: 3;
+  display: none;
+}
+.commit-tree-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  position: relative;
+}
+.tree-ruler {
+  display: grid;
+  grid-template-columns: 210px 1fr auto;
+  padding: 12px 20px 10px;
+  color: #767676;
+  font:
+    8px "IBM Plex Mono",
+    monospace;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #222;
+}
+.tree-ruler span:nth-child(2) {
+  margin-left: -14px;
+}
+.tree-scroll {
+  overflow: auto;
+  flex: 1;
+  scrollbar-color: #454545 #111;
+  scrollbar-width: thin;
+  background-image: linear-gradient(
+    90deg,
+    transparent 33px,
+    #ffffff03 34px,
+    transparent 35px
+  );
+  background-size: 32px 100%;
+}
+.tree-content {
+  position: relative;
+}
+.ancestry-lines {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.tree-commit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  min-height: 55px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  text-align: left;
+  padding: 0 25px 0 210px;
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.tree-commit:hover {
+  background: #ffffff04;
+}
+.tree-commit.is-selected {
+  background: linear-gradient(90deg, #ffffff04, #ffffff0b);
+  border-color: #ffffff18;
+}
+.tree-node {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  margin-left: -7px;
+  border-radius: 50%;
+  border: 1px solid #949494;
+  background: #0c0c0c;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 5px #0c0c0c;
+  z-index: 1;
+}
+.tree-node > span {
+  width: 5px;
+  height: 5px;
+  background: #b7b7b7;
+  border-radius: 50%;
+}
+.is-selected .tree-node {
+  border-color: #fff;
+  box-shadow:
+    0 0 0 5px #252525,
+    0 0 24px #ffffff30;
+}
+.is-selected .tree-node > span {
+  background: white;
+}
+.tree-message {
+  min-width: 0;
+  flex: 1;
+}
+.tree-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.tree-meta > code {
+  font-size: 9px;
+  color: #aaa;
+}
+.tree-branch {
+  font:
+    8px "IBM Plex Mono",
+    monospace;
+  color: white;
+  background: #303030;
+  border: 1px solid #545454;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.tree-head {
+  font:
+    7px "IBM Plex Mono",
+    monospace;
+  color: #111;
+  background: white;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+.tree-message strong {
+  font-weight: 450;
+  font-size: 12px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #ddd;
+}
+.tree-message small {
+  font-size: 9px;
+  color: #888;
+  display: block;
+  margin-top: 3px;
+}
+.tree-open {
+  color: #555;
+}
+.is-selected .tree-open {
+  color: #fff;
+}
+.tree-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #292929;
+  padding: 8px 14px;
+  font-size: 9px;
+  color: #9a9a9a;
+  background: #111;
+  gap: 10px;
+}
+.tree-bottom > span,
+.tree-bottom > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.tree-bottom button {
+  background: #222;
+  border: 1px solid #393939;
+  padding: 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+}
+.tree-bottom code {
+  font-size: 8px;
+  min-width: 29px;
+}
+.repository-bottom {
+  grid-template-columns: minmax(250px, 0.65fr) minmax(0, 1.35fr);
+}
+.commit-inspector {
+  align-self: start;
+}
+.inspector-body {
+  padding: 24px;
+}
+.inspector-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.inspector-kicker code {
+  background: #fff;
+  color: #111;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 3px;
+}
+.inspector-kicker > span {
+  color: #858585;
+  font:
+    8px "IBM Plex Mono",
+    monospace;
+  letter-spacing: 1px;
+}
+.inspector-body h3 {
+  font-size: 20px;
+  line-height: 1.5;
+  letter-spacing: -0.4px;
+}
+.inspector-author {
+  font-size: 11px;
+  color: #ccc;
+  margin: 14px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.inspector-author > span {
+  color: #888;
+}
+.inspector-parents {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #aaa;
+  border-bottom: 1px solid #292929;
+  padding-bottom: 20px;
+  flex-wrap: wrap;
+  font-size: 10px;
+}
+.inspector-parents code {
+  background: #252525;
+  padding: 3px 6px;
+  font-size: 9px;
+  border-radius: 3px;
+}
+.diff-stats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+.diff-stats strong {
+  font-size: 22px;
+  font-weight: 500;
+}
+.diff-stats small {
+  font-size: 11px;
+  color: #aaa;
+  font-weight: 400;
+}
+.diff-stats > span {
+  font:
+    9px "IBM Plex Mono",
+    monospace;
+  color: #ccc;
+}
+.diff-stats > span:last-child {
+  color: #929292;
+}
+.commit-description {
+  font-size: 11px;
+  color: #aaa;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  margin: 14px 0 20px;
+}
+.changed-file {
+  border: 1px solid #333;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.changed-file > button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  padding: 13px;
+  background: #1b1b1b;
+  color: #ccc;
+}
+.changed-file > button > span:first-of-type {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font:
+    10px "IBM Plex Mono",
+    monospace;
+}
+.changed-file small {
+  display: block;
+  font:
+    8px "DM Sans",
+    sans-serif;
+  color: #888;
+  margin-top: 5px;
+}
+.changed-file code {
+  font-size: 8px;
+  white-space: nowrap;
+}
+.changed-file > button:hover {
+  background: #252525;
+}
+.patch {
+  border-top: 1px solid #333;
+  background: #0a0a0a;
+  overflow: auto;
+  max-height: 380px;
+}
+.patch pre {
+  margin: 0;
+  font:
+    10px/1.9 "IBM Plex Mono",
+    monospace;
+  min-width: max-content;
+  padding: 12px 0;
+  color: #a0a0a0;
+}
+.patch pre > span {
+  display: block;
+  min-height: 19px;
+  padding-right: 15px;
+}
+.patch pre i {
+  display: inline-block;
+  font-style: normal;
+  color: #555;
+  font-size: 8px;
+  width: 36px;
+  text-align: center;
+  margin-right: 9px;
+  user-select: none;
+}
+.patch .diff-add {
+  background: #ffffff0c;
+  color: #eee;
+}
+.patch .diff-remove {
+  background: #ffffff04;
+  color: #888;
+  text-decoration: line-through;
+  text-decoration-color: #555;
+}
+.patch .diff-hunk {
+  color: #bababa;
+  border-bottom: 1px dashed #333;
+  margin-bottom: 4px;
+}
+.inspector-body > .secondary-button {
+  margin-top: 16px;
+}
+.inspector-loading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  color: #aaa;
+  margin: 24px 0;
+}
+.nav-item.active svg {
+  animation: icon-enter 0.45s var(--ease-out);
+}
+.panel-heading .live-tag:before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  margin-right: 5px;
+  animation: pulse-signal 2.5s ease-in-out infinite;
+}
+.connect-dialog {
+  background: #151515;
+  border-color: #555;
+}
+.dialog-icon {
+  background: #222;
+  color: white;
+  border-color: #555;
+}
+.connect-dialog input {
+  background: #090909;
+  border-color: #555;
+}
+.error-message {
+  background: #222 !important;
+  color: #fff !important;
+  border-color: #666 !important;
+}
+.primary-button.full {
+  color: #111;
+}
+.notice {
+  background: #1f1f1f;
+  color: #eee;
+  border-color: #555;
+}
+.health-state,
+.health-foot > span,
+.deploy-status {
+  color: #ddd;
+}
+.metric-check {
+  color: #fff;
+  border-color: #555;
+}
+.repo-toolbar .select-wrap,
+.view-label {
+  border-color: #444;
+}
+.selected.commit-row {
+  background: #292929;
+}
+.commit-row:hover {
+  background: #222;
+}
+.deployment-row:hover {
+  background: #222;
+}
+.deploy-icon {
+  background: #222;
+  border-color: #444;
+  color: #fff;
+}
+.deploy-icon.amber {
+  background: #222;
+  border-color: #555;
+}
+.file-tree button:hover,
+.file-tree a[href]:hover {
+  background: #242424;
+  color: white;
+}
+.secondary-button {
+  background: #222;
+  color: #eee;
+  border-color: #444;
+}
+.tree-message,
+.inspector-body {
+  animation: surface-in 0.35s var(--ease-out) both;
+}
+@keyframes surface-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes icon-enter {
+  from {
+    transform: rotate(-12deg) scale(0.8);
+  }
+  to {
+    transform: rotate(0) scale(1);
+  }
+}
+@keyframes pulse-signal {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (max-width: 960px) {
+  .repository-bottom {
+    grid-template-columns: 1fr;
+  }
+  .tree-ruler {
+    grid-template-columns: 190px 1fr;
+  }
+  .tree-ruler span:last-child {
+    display: none;
+  }
+  .tree-commit {
+    padding-left: 190px;
+  }
+}
+@media (max-width: 700px) {
+  .graph-stage {
+    height: 500px;
+  }
+  .compact-tree .graph-stage {
+    height: 360px;
+  }
+  .graph-legend {
+    padding: 8px 13px;
+    gap: 5px 14px;
+  }
+  .tree-ruler {
+    grid-template-columns: 170px 1fr;
+    padding-left: 14px;
+    font-size: 7px;
+  }
+  .tree-commit {
+    padding-left: 170px;
+    padding-right: 14px;
+  }
+  .tree-content {
+    min-width: 480px;
+  }
+  .tree-message strong {
+    font-size: 11px;
+  }
+  .tree-message small {
+    font-size: 8px;
+  }
+  .tree-bottom {
+    font-size: 8px;
+    padding: 8px 10px;
+  }
+  .tree-bottom > span {
+    max-width: 180px;
+  }
+  .inspector-body {
+    padding: 18px;
+  }
+  .inspector-body h3 {
+    font-size: 18px;
+  }
+  .changed-file > button {
+    padding: 11px 9px;
+  }
+  .changed-file code {
+    font-size: 7px;
+  }
+  .diff-stats {
+    gap: 9px;
+  }
+  .share-repo {
+    font-size: 9px;
+  }
+  .metric-value.green {
+    color: white;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .metric-card:hover,
+  .sidebar .nav-item:hover {
+    transform: none;
+  }
+}

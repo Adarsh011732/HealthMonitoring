@@ -1,0 +1,14 @@
+name: branchline-pipelines
+services:
+  pipelines:
+    image: ${APP_IMAGE:?Set APP_IMAGE to the built Branchline image}
+    command: [node, /app/scripts/pipeline-monitor.mjs]
+    env_file: runtime.env
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}

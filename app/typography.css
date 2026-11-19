@@ -1,0 +1,133 @@
+/* Deliberate hierarchy without changing the monochrome visual language. */
+.operations-panel {
+  margin-bottom: 24px;
+}
+.operations-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  padding: 24px;
+}
+.operations-summary strong {
+  font-size: 27px;
+  font-weight: 600;
+}
+.operations-summary p {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 7px;
+}
+.incident-list {
+  padding: 20px;
+  font-size: 12px;
+}
+.incident-list p {
+  margin: 12px 0;
+  color: #aaa;
+}
+@media (max-width: 700px) {
+  .operations-summary {
+    grid-template-columns: 1fr;
+  }
+  .operations-summary strong {
+    font-size: 23px;
+  }
+}
+body {
+  font-weight: 450;
+  letter-spacing: 0.005em;
+}
+h1,
+.page-heading h1 {
+  font-weight: 600;
+  letter-spacing: -1.1px;
+}
+.brand {
+  font-weight: 700;
+}
+.panel-heading h2 {
+  font-weight: 650;
+  font-size: 14px;
+  letter-spacing: -0.15px;
+}
+.repo-name strong {
+  font-weight: 600;
+  font-size: 13px;
+}
+.nav-item {
+  font-weight: 500;
+}
+.nav-item.active {
+  font-weight: 650;
+}
+.metric-value {
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+}
+.metric-label {
+  font-weight: 550;
+  font-size: 12px;
+}
+.metric-card p {
+  font-size: 10px;
+  line-height: 1.6;
+}
+.page-heading p {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.tree-message strong {
+  font-weight: 550;
+  font-size: 12px;
+}
+.tree-message small {
+  font-size: 10px;
+}
+.commit-row strong {
+  font-weight: 550;
+}
+.inspector-body h3 {
+  font-weight: 600;
+}
+.deploy-copy strong {
+  font-size: 12px;
+  font-weight: 550;
+}
+.deploy-copy small {
+  font-size: 10px;
+}
+.source-strip p {
+  font-size: 11px;
+}
+.primary-button,
+.secondary-button {
+  font-weight: 650;
+}
+.eyebrow {
+  font-weight: 500;
+  letter-spacing: 1.5px;
+}
+@media (max-width: 700px) {
+  .page-heading h1 {
+    font-size: 28px;
+  }
+  .panel-heading h2 {
+    font-size: 13px;
+  }
+  .metric-label {
+    font-size: 11px;
+  }
+  .metric-card p {
+    font-size: 10px;
+  }
+  .tree-message strong {
+    font-size: 11px;
+  }
+  .tree-message small {
+    font-size: 9px;
+  }
+  .repo-name strong {
+    font-size: 12px;
+  }
+}
