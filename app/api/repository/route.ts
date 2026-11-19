@@ -99,26 +99,26 @@ export async function GET(request: Request) {
         if (!lanes.has(p)) lanes.set(p, i === 0 ? c.lane : nextLane++);
       });
     }
-    return Response.json(
-      {
-        name: repo.full_name.replace("/", " / "),
-        description: repo.description || "Connected GitHub repository",
-        url: repo.html_url,
-        defaultBranch: repo.default_branch,
-        branches: branches.map((b) => ({
-          name: b.name,
-          sha: b.commit.sha,
-          protected: b.protected,
-        })),
-        commits,
-        files: (tree.tree || [])
-          .slice(0, 1000)
-          .map((f: any) => ({ path: f.path, type: f.type })),
-        fetchedAt: new Date().toISOString(),
-        truncated: more || tree.truncated || tree.tree?.length > 1000,
-      },
-      { headers: { "Cache-Control": "no-store" } },
-    );
+    const payload = {
+      name: repo.full_name.replace("/", " / "),
+      description: repo.description || "Connected GitHub repository",
+      url: repo.html_url,
+      defaultBranch: repo.default_branch,
+      branches: branches.map((b) => ({
+        name: b.name,
+        sha: b.commit.sha,
+        protected: b.protected,
+      })),
+      commits,
+      files: (tree.tree || [])
+        .slice(0, 1000)
+        .map((f: any) => ({ path: f.path, type: f.type })),
+      fetchedAt: new Date().toISOString(),
+      truncated: more || tree.truncated || tree.tree?.length > 1000,
+    };
+    return Response.json(payload, {
+      headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=120" },
+    });
   } catch (error) {
     return Response.json(
       {

@@ -19,12 +19,20 @@ export interface AppUserSession {
 }
 
 export async function session(): Promise<AppUserSession | null> {
-  if (authReady()) {
-    try {
-      const s = await getAuth().api.getSession({ headers: await headers() });
+  try {
+    const cookieHeader = (await headers()).get("cookie") || "";
+    // If no auth cookie exists, skip remote database lookup entirely (instant response)
+    if (!cookieHeader.includes("better-auth") && !cookieHeader.includes("branchline_session")) {
+      return null;
+    }
+
+    if (authReady()) {
+      const authPromise = getAuth().api.getSession({ headers: await headers() });
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 600));
+      const s = await Promise.race([authPromise, timeoutPromise]);
       if (s) return s as unknown as AppUserSession;
-    } catch {}
-  }
+    }
+  } catch {}
 
   return null;
 }

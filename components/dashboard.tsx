@@ -97,7 +97,7 @@ export default function Dashboard({
     if (found) setTab(found.name);
   }, [pathname]);
 
-  // Load repository with persistent memory (localStorage & URL)
+  // Load repository with persistent memory (sessionStorage & localStorage)
   useEffect(() => {
     let repoToLoad = new URLSearchParams(window.location.search).get("repo");
     if (!repoToLoad) {
@@ -109,6 +109,17 @@ export default function Dashboard({
       repoToLoad = "facebook/react"; // Rich default repository so it's never empty
     }
     setInput(repoToLoad);
+
+    // Instant client cache hydration to eliminate 1-2s loading delay
+    try {
+      const cached = sessionStorage.getItem(`branchline.repo_cache.${repoToLoad}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setRepository(parsed);
+        setSelected(parsed.commits[0]?.sha || "");
+      }
+    } catch {}
+
     void loadRepository(repoToLoad);
   }, []);
 
@@ -145,7 +156,11 @@ export default function Dashboard({
     const trimmed = value.trim();
     if (!trimmed) return;
     const version = ++requestVersion.current;
-    setLoading(true);
+    
+    // Only show loading indicator if repository data is not already populated
+    if (!repository) {
+      setLoading(true);
+    }
     setError("");
     try {
       const response = await fetch(`/api/repository?repo=${encodeURIComponent(trimmed)}`, { cache: "no-store" });
@@ -158,6 +173,8 @@ export default function Dashboard({
       const cleanName = body.name.replace(/\s/g, "");
       try {
         localStorage.setItem("branchline.current_repo", cleanName);
+        sessionStorage.setItem(`branchline.repo_cache.${cleanName}`, JSON.stringify(body));
+        sessionStorage.setItem(`branchline.repo_cache.${trimmed}`, JSON.stringify(body));
       } catch {}
       const params = new URLSearchParams(window.location.search);
       params.set("repo", cleanName);
