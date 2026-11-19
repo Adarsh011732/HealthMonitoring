@@ -283,7 +283,6 @@ export default function Dashboard({
                 <UserRound size={14} />
               </span>
               <span className="user-name">{user.name ? user.name.split(" ")[0] : "Adarsh"}</span>
-              <span className="user-role-badge">Online</span>
               <button onClick={handleSignOut} className="signout-icon-btn" title="Sign out">
                 <LogOut size={13} />
                 <span>Exit</span>
