@@ -190,4 +190,3 @@ The current release passed type checking, eight automated tests, a production bu
 
 Built by **Adarsh Singh** for the CSE DevOps project.
 [Live app](https://branchline-rho.vercel.app) · [Source](https://github.com/Adarsh011732/HealthMonitoring) · [Container](https://hub.docker.com/r/adarshsingh000/branchline)
-
