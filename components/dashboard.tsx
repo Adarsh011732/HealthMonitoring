@@ -60,8 +60,9 @@ export default function Dashboard({
 }) {
   const pathname = usePathname();
   const reduced = useReducedMotion();
-  const { data: account, isPending } = auth.useSession();
-  const user = isPending ? initialUser : account?.user;
+  const { data: account, isPending, error: sessionError, refetch: refreshSession } = auth.useSession();
+  const user = account?.user || ((isPending || sessionError) ? initialUser : null);
+  const sessionState = user ? "authenticated" : isPending ? "loading" : sessionError ? "error" : "anonymous";
 
   const requestVersion = useRef(0);
   const [tab, setTab] = useState(initialTab);
@@ -250,6 +251,10 @@ export default function Dashboard({
                 <span>Exit</span>
               </button>
             </div>
+          ) : sessionState === "loading" ? (
+            <span role="status">Checking session…</span>
+          ) : sessionState === "error" ? (
+            <button onClick={() => void refreshSession()}>Retry account check</button>
           ) : (
             <a href="/login" className="login-header-btn">
               Sign in <ArrowUpRight size={14} />
@@ -607,7 +612,7 @@ export default function Dashboard({
             </div>
           )}
 
-          {tab === "Deployments" && <PipelineHistory repository={repository?.name.replace(/\s/g, "")} />}
+          {tab === "Deployments" && <PipelineHistory repository={repository?.name.replace(/\s/g, "")} sessionState={sessionState} onRefreshSession={() => void refreshSession()} />}
           {tab === "Settings" && <div className="account-settings">
             <section className="production-card settings-profile">
               <span className="settings-avatar"><UserRound size={28}/></span>
