@@ -7,6 +7,7 @@ import "./typography.css";
 import "./production.css";
 import "./refined-theme.css";
 import "./restored-dashboard.css";
+import "./submission-ui.css";
 export const metadata: Metadata = {
   title: "Branchline · Smart Deployment Health Monitor",
   description:

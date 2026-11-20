@@ -27,9 +27,7 @@ export async function session(): Promise<AppUserSession | null> {
     }
 
     if (authReady()) {
-      const authPromise = getAuth().api.getSession({ headers: await headers() });
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 600));
-      const s = await Promise.race([authPromise, timeoutPromise]);
+      const s = await getAuth().api.getSession({ headers: await headers() });
       if (s) return s as unknown as AppUserSession;
     }
   } catch {}

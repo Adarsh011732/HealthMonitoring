@@ -134,7 +134,7 @@ export default function Workspace({
             </div>
           )}
         </div>
-        <aside>
+        <aside id="notifications">
           <h2>Email preferences</h2>
           <p>
             Alerts are delivered to your verified account email:{" "}

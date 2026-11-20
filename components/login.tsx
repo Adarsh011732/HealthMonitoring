@@ -45,7 +45,6 @@ export default function Login({ configured, github, google }: {
         <div className="login-art-footer"><span><span className="login-dot" /> A LITTLE MORE CONFIDENCE IN EVERY DEPLOY.</span></div>
       </section>
       <section className="login-form">
-        <a href="/dashboard" className="login-return">Back to dashboard <ArrowUpRight size={14} /></a>
         <div className="login-card">
           <div className="login-mark"><GitBranch size={27} /></div>
           <span className="login-eyebrow">YOUR NEXT CHAPTER</span>

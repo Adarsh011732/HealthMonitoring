@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createAuthClient } from "better-auth/react";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   Activity,
   ArrowUpRight,
@@ -12,20 +12,12 @@ import {
   LayoutDashboard,
   Settings2,
   UserRound,
-  RotateCcw,
-  Check,
-  CheckCircle2,
-  AlertTriangle,
-  Play,
-  Pause,
   RefreshCw,
   Server,
-  Terminal,
   ShieldCheck,
   Radio,
   LogOut,
   ArrowDown,
-  ExternalLink,
   ChevronRight,
   Clock,
   Zap,
@@ -34,6 +26,9 @@ import type { Repository } from "../lib/repository";
 import RepositoryGraph from "./repository-graph";
 import CommitInspector from "./commit-inspector";
 import PipelineHistory from "./pipeline-history";
+import OverviewSummary from "./overview-summary";
+import LatencyChart from "./latency-chart";
+import RepositoryPicker from "./repository-picker";
 
 const sections = [
   { name: "Overview", icon: LayoutDashboard },
@@ -65,8 +60,8 @@ export default function Dashboard({
 }) {
   const pathname = usePathname();
   const reduced = useReducedMotion();
-  const { data: account } = auth.useSession();
-  const user = account?.user || initialUser;
+  const { data: account, isPending } = auth.useSession();
+  const user = isPending ? initialUser : account?.user;
 
   const requestVersion = useRef(0);
   const [tab, setTab] = useState(initialTab);
@@ -82,13 +77,17 @@ export default function Dashboard({
   const [samples, setSamples] = useState<CheckSample[]>([]);
   const [checking, setChecking] = useState(false);
 
+  const probeInFlight = useRef(false);
+  const [commitQuery, setCommitQuery] = useState("");
   const [reset, setReset] = useState(0);
   const [connect, setConnect] = useState(false);
 
-  // Deployment Simulator State (Automated Rollback Engine)
-  const [simState, setSimState] = useState<"idle" | "running" | "healthy" | "rollback">("idle");
-  const [simLogs, setSimLogs] = useState<string[]>([]);
-  const [simActiveRelease, setSimActiveRelease] = useState("v1.4.2-stable");
+  const pickerDialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = pickerDialog.current;
+    if (connect && !dialog?.open) dialog?.showModal();
+    if (!connect && dialog?.open) dialog.close();
+  }, [connect]);
 
   // Keep tab synced with pathname
   useEffect(() => {
@@ -106,7 +105,7 @@ export default function Dashboard({
       } catch {}
     }
     if (!repoToLoad) {
-      repoToLoad = "facebook/react"; // Rich default repository so it's never empty
+      setConnect(true); return;
     }
     setInput(repoToLoad);
 
@@ -125,6 +124,8 @@ export default function Dashboard({
 
   // Real-time Health Checker
   const checkHealth = useCallback(async () => {
+    if (probeInFlight.current) return;
+    probeInFlight.current = true;
     setChecking(true);
     const start = performance.now();
     try {
@@ -135,11 +136,12 @@ export default function Dashboard({
       setHealth(body);
       setLatency(ms);
       setHealthError("");
-      setSamples((prev) => [...prev.slice(-30), { time: new Date().toISOString(), ms, ok: true }]);
+      setSamples((prev) => [...prev.slice(-29), { time: new Date().toISOString(), ms, ok: true }]);
     } catch (err: any) {
       setHealthError(err.message || "Health check failed");
-      setSamples((prev) => [...prev.slice(-30), { time: new Date().toISOString(), ms: 0, ok: false }]);
+      setSamples((prev) => [...prev.slice(-29), { time: new Date().toISOString(), ms: 0, ok: false }]);
     } finally {
+      probeInFlight.current = false;
       setChecking(false);
     }
   }, []);
@@ -170,6 +172,7 @@ export default function Dashboard({
       setRepository(body);
       setConnect(false);
       setSelected(body.commits[0]?.sha || "");
+      setCommitQuery("");
       const cleanName = body.name.replace(/\s/g, "");
       try {
         localStorage.setItem("branchline.current_repo", cleanName);
@@ -188,6 +191,7 @@ export default function Dashboard({
 
   function navigate(name: string) {
     setTab(name);
+    setConnect(false);
     const params = new URLSearchParams(window.location.search);
     if (repository) {
       params.set("repo", repository.name.replace(/\s/g, ""));
@@ -196,54 +200,12 @@ export default function Dashboard({
     window.history.pushState(null, "", `/dashboard/${name.toLowerCase()}${queryString}`);
   }
 
-  // Automated Rollback Simulator
-  const runSimulator = (mode: "healthy" | "rollback") => {
-    setSimState("running");
-    setSimLogs([]);
-    const logs: string[] = [];
-
-    const append = (msg: string) => {
-      logs.push(msg);
-      setSimLogs([...logs]);
-    };
-
-    if (mode === "healthy") {
-      append("[00:00.12] Dispatching canary candidate: smart-health:v1.4.3 (sha-e04279)");
-      append("[00:00.85] Container started on isolated probe port 3001");
-      setTimeout(() => append("[00:01.40] Executing automated health probe 1/5 -> /health: 200 OK (11ms)"), 500);
-      setTimeout(() => append("[00:02.10] Executing automated health probe 2/5 -> /health: 200 OK (9ms)"), 1000);
-      setTimeout(() => append("[00:02.80] Executing automated health probe 3/5 -> /health: 200 OK (10ms)"), 1500);
-      setTimeout(() => append("[00:03.50] Executing automated health probe 4/5 -> /health: 200 OK (9ms)"), 2000);
-      setTimeout(() => append("[00:04.20] Executing automated health probe 5/5 -> /health: 200 OK (8ms)"), 2500);
-      setTimeout(() => {
-        append("[00:04.90] Automated verification PASSED (5/5 checks clean).");
-        append("[00:05.10] Zero-downtime traffic switch: v1.4.3 promoted to PRODUCTION.");
-        setSimActiveRelease("v1.4.3-stable");
-        setSimState("healthy");
-      }, 3000);
-    } else {
-      append("[00:00.12] Dispatching candidate release: smart-health:v1.4.4-buggy (sha-f8c20a)");
-      append("[00:00.80] Container booted on isolated verification port 3001");
-      setTimeout(() => append("[00:01.30] Health probe 1/5 -> /health: 503 SERVICE UNAVAILABLE (Crash loop)"), 500);
-      setTimeout(() => append("[00:02.00] Health probe 2/5 -> /health: Timeout after 2000ms"), 1000);
-      setTimeout(() => append("[00:02.60] Health probe 3/5 -> /health: Connection refused"), 1500);
-      setTimeout(() => {
-        append("[00:03.10] CRITICAL: Deployment health check FAILED (Threshold breached: 3 errors).");
-        append("[00:03.40] CIRCUIT BREAKER TRIPPED -> INITIATING AUTOMATED ROLLBACK!");
-        append("[00:04.20] Killing unhealthy candidate container (pid: 58210)...");
-        append("[00:04.80] Restoring previous verified image (v1.4.2-stable) on production port 3000.");
-        append("[00:05.30] AUTOMATED ROLLBACK COMPLETE: Stable version confirmed healthy.");
-        append("[00:05.60] Alert dispatched to developer (Gmail / Discord webhook notification sent).");
-        setSimActiveRelease("v1.4.2-stable (Restored)");
-        setSimState("rollback");
-      }, 2200);
-    }
-  };
-
   const handleSignOut = async () => {
-    try { await auth.signOut(); } catch {}
-    try { await fetch("/api/auth/demo", { method: "DELETE" }); } catch {}
-    window.location.assign("/login");
+    try {
+      const result = await auth.signOut();
+      if (result.error) throw new Error("Sign out failed");
+      window.location.assign("/login");
+    } catch { setError("Sign out failed. Please try again."); }
   };
 
   const exportCsv = () => {
@@ -282,7 +244,7 @@ export default function Dashboard({
               <span className="user-icon-circle">
                 <UserRound size={14} />
               </span>
-              <span className="user-name">{user.name ? user.name.split(" ")[0] : "Adarsh"}</span>
+              <span className="user-name">{user.name ? user.name.split(" ")[0] : "Account"}</span>
               <button onClick={handleSignOut} className="signout-icon-btn" title="Sign out">
                 <LogOut size={13} />
                 <span>Exit</span>
@@ -363,17 +325,17 @@ export default function Dashboard({
               <span className="eyebrow-tag">DEVOPS DEPLOYMENT AUTOMATION</span>
               <h1>
                 {tab === "Overview" && "A clear view. A confident deploy."}
-                {tab === "Repository" && "Commit Ancestry & Signal Tree"}
-                {tab === "Services" && "Real-Time Microservice Health"}
-                {tab === "Deployments" && "Automated Rollback & Canary Verification"}
-                {tab === "Settings" && "Infrastructure & Environment"}
+                {tab === "Repository" && "Your repository, connected."}
+                {tab === "Services" && "Application health"}
+                {tab === "Deployments" && "Workflow activity"}
+                {tab === "Settings" && "Your workspace settings"}
               </h1>
               <p>
-                {tab === "Overview" && "Continuous health verification, automated rollbacks, and commit tracking."}
+                {tab === "Overview" && "Follow your code, workflow activity, and application health in one place."}
                 {tab === "Repository" && "Explore live branches, tree signals, and inspect line diffs from GitHub."}
                 {tab === "Services" && "Live instance telemetry, response times, memory metrics, and audit logs."}
-                {tab === "Deployments" && "Monitor canary releases, simulate failures, and observe instant rollbacks."}
-                {tab === "Settings" && "Production credentials, Docker Hub, AWS EC2, and email alert channels."}
+                {tab === "Deployments" && "Live workflow runs and deployment records from GitHub."}
+                {tab === "Settings" && "Manage your account, saved repositories, and email preferences."}
               </p>
             </div>
 
@@ -401,7 +363,7 @@ export default function Dashboard({
               <strong>ACTIVE REPO</strong>
             </span>
             <span className="repo-current-name">
-              {repository ? repository.name : "Loading repository snapshot..."}
+              {repository ? repository.name : loading ? "Loading repository…" : "No repository connected"}
             </span>
             {repository && (
               <span className="repo-meta-pill">
@@ -413,48 +375,21 @@ export default function Dashboard({
             </button>
           </div>
 
-          {/* Quick Connect Dropdown Panel */}
-          <AnimatePresence>
-            {connect && (
-              <motion.section
-                key="connect"
-                className="production-card connect-panel"
-                initial={{ opacity: 0, y: reduced ? 0 : -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: reduced ? 0 : -6 }}
-                transition={{ duration: 0.22 }}
-              >
-                <div className="connect-heading">
-                  <div>
-                    <h2>Connect Public GitHub Repository</h2>
-                    <p>Load any public repo (e.g. <code>facebook/react</code>, <code>vercel/next.js</code>, <code>torvalds/linux</code>).</p>
-                  </div>
-                  <button onClick={() => setConnect(false)} className="close-btn">✕</button>
-                </div>
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void loadRepository(input);
-                  }}
-                  className="production-form"
-                >
-                  <input
-                    id="repository-input"
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    placeholder="owner/repository"
-                    required
-                    maxLength={200}
-                    pattern="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"
-                  />
-                  <button type="submit" disabled={loading}>
-                    {loading ? "Loading..." : "Load Repository"}
-                  </button>
+          <dialog ref={pickerDialog} className="repository-dialog" aria-label="Switch repository" onCancel={() => setConnect(false)} onClose={() => setConnect(false)} onClick={event => { if (event.target === event.currentTarget) setConnect(false); }}>
+            <section className="production-card connect-panel">
+              <div className="connect-heading"><div><h2>Switch repository</h2><p>Choose a saved repository or connect another public project.</p></div><button onClick={() => setConnect(false)} aria-label="Close repository picker">✕</button></div>
+              {connect && <RepositoryPicker current={repository?.name.replace(/\s/g, "")} busy={loading} onSelect={value => { setInput(value); void loadRepository(value); }} />}
+              <details className="picker-manual"><summary>Open a different public repository</summary>
+                <form className="production-form" onSubmit={event => { event.preventDefault(); void loadRepository(input); }}>
+                  <label htmlFor="repository-input">Repository name</label>
+                  <input id="repository-input" value={input} onChange={event => setInput(event.target.value)} placeholder="owner/repository" required maxLength={200} pattern="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+" />
+                  <button disabled={loading}>{loading ? "Connecting…" : "Connect repository"}</button>
                 </form>
-                {error && <p role="alert" className="production-error">{error}</p>}
-              </motion.section>
-            )}
-          </AnimatePresence>
+              </details>
+              {error && <p role="alert" className="production-error">{error}</p>}
+            </section>
+          </dialog>
+          {error && !connect && <p role="alert" className="production-error">{error}</p>}
 
           {/* TAB 1: OVERVIEW */}
           {tab === "Overview" && (
@@ -469,21 +404,21 @@ export default function Dashboard({
                 <motion.article whileHover={reduced ? {} : { y: -3 }}>
                   <span>Health State <Activity size={16} /></span>
                   <strong className={healthError ? "text-amber" : "text-emerald"}>
-                    {healthError ? "Attention" : health ? "100% OK" : "Checking…"}
+                    {healthError ? "Attention" : health ? "Operational" : "Checking…"}
                   </strong>
                   <small>{healthError || "Automated probes passing (/health)"}</small>
                 </motion.article>
 
                 <motion.article whileHover={reduced ? {} : { y: -3 }}>
                   <span>Response Latency <Radio size={16} /></span>
-                  <strong>{latency !== null ? `${latency} ms` : "12 ms"}</strong>
-                  <small>Internal round-trip health check</small>
+                  <strong>{latency !== null ? `${latency} ms` : "—"}</strong>
+                  <small>Browser-to-app round trip</small>
                 </motion.article>
 
                 <motion.article whileHover={reduced ? {} : { y: -3 }}>
-                  <span>Active Release <Layers size={16} /></span>
-                  <strong>{simActiveRelease.split(" ")[0]}</strong>
-                  <small>Auto-Rollback circuit breaker: Armed</small>
+                  <span>Latest commit <Layers size={16} /></span>
+                  <strong>{repository?.commits[0]?.sha.slice(0, 7) || "—"}</strong>
+                  <small>Latest commit in the repository snapshot</small>
                 </motion.article>
 
                 <motion.article whileHover={reduced ? {} : { y: -3 }}>
@@ -493,30 +428,7 @@ export default function Dashboard({
                 </motion.article>
               </motion.div>
 
-              {/* Commit Tree Preview */}
-              {repository && (
-                <div className="overview-bottom-grid">
-                  <section className="production-card">
-                    <div className="production-row">
-                      <h2>Commit Tree Map ({repository.name})</h2>
-                      <button type="button" onClick={() => setReset((v) => v + 1)}>Reset View</button>
-                    </div>
-                    {repository.commits.length ? (
-                      <RepositoryGraph
-                        commits={repository.commits}
-                        selected={selected}
-                        onSelect={setSelected}
-                        paused={false}
-                        reset={reset}
-                        branches={repository.branches}
-                      />
-                    ) : (
-                      <p>No commits returned.</p>
-                    )}
-                  </section>
-                  <CommitInspector repo={repository} commit={selectedCommit} />
-                </div>
-              )}
+              <OverviewSummary repository={repository} samples={samples} navigate={navigate} />
             </>
           )}
 
@@ -557,7 +469,7 @@ export default function Dashboard({
                       <Layers size={16} />
                     </span>
                     <strong>{repository.files.length}</strong>
-                    <small>Verified production repository files</small>
+                    <small>Files in this repository snapshot</small>
                   </article>
                 </div>
               </section>
@@ -568,8 +480,9 @@ export default function Dashboard({
                     <h2>Ancestry & Signal Tree</h2>
                     <button type="button" onClick={() => setReset((v) => v + 1)}>Reset View</button>
                   </div>
+                  <label className="commit-search">Find a commit<input value={commitQuery} onChange={event => setCommitQuery(event.target.value)} placeholder="Search message, author, or SHA" /></label>
                   <RepositoryGraph
-                    commits={repository.commits}
+                    commits={repository.commits.filter(commit => `${commit.message} ${commit.author} ${commit.sha}`.toLowerCase().includes(commitQuery.toLowerCase()))}
                     selected={selected}
                     onSelect={setSelected}
                     paused={false}
@@ -589,9 +502,9 @@ export default function Dashboard({
               <section className="production-card live-service-card">
                 <div className="service-card-header">
                   <div>
-                    <span className="eyebrow-tag">MICROSERVICE PULSE TELEMETRY</span>
-                    <h2>smart-health-monitor</h2>
-                    <p>Continuous real-time post-deployment health verification with automated circuit breaker.</p>
+                    <span className="eyebrow-tag">APPLICATION HEALTH</span>
+                    <h2>Branchline service</h2>
+                    <p>Live checks of this Branchline instance. These measurements do not probe the selected repository’s deployed website.</p>
                   </div>
                   <div className="service-actions">
                     <button onClick={checkHealth} disabled={checking} className="probe-now-btn">
@@ -612,16 +525,16 @@ export default function Dashboard({
                       <span className={`status-dot ${healthError ? "danger" : "active"}`} />
                     </span>
                     <strong className={healthError ? "stat-danger" : "stat-success"}>
-                      ● {healthError ? "ATTENTION" : health ? "OPERATIONAL" : "CHECKING"}
+                      {healthError ? "Attention" : health ? "Operational" : "Checking"}
                     </strong>
                     <small>Endpoint /health responsive</small>
                   </article>
                   <article className="service-stat-card">
                     <span className="metric-header">
-                      <span>CONTAINER UPTIME</span>
+                      <span>INSTANCE UPTIME</span>
                       <Clock size={15} />
                     </span>
-                    <strong>{health ? `${Math.floor(health.uptime / 60)}m ${Math.floor(health.uptime % 60)}s` : "28m 15s"}</strong>
+                    <strong>{health ? `${Math.floor(health.uptime / 60)}m ${Math.floor(health.uptime % 60)}s` : "—"}</strong>
                     <small>Continuous server uptime</small>
                   </article>
                   <article className="service-stat-card">
@@ -629,15 +542,15 @@ export default function Dashboard({
                       <span>PROBE LATENCY</span>
                       <Zap size={15} />
                     </span>
-                    <strong className="stat-highlight">{latency !== null ? `${latency} ms` : "12 ms"}</strong>
-                    <small>Target SLA &lt; 50ms</small>
+                    <strong className="stat-highlight">{latency !== null ? `${latency} ms` : "—"}</strong>
+                    <small>Measured from your browser</small>
                   </article>
                   <article className="service-stat-card">
                     <span className="metric-header">
                       <span>MEMORY (RSS / HEAP)</span>
                       <Server size={15} />
                     </span>
-                    <strong>{health?.memory ? `${health.memory.rssMb}M / ${health.memory.heapUsedMb}M` : "88 MB / 28 MB"}</strong>
+                    <strong>{health?.memory ? `${health.memory.rssMb}M / ${health.memory.heapUsedMb}M` : "—"}</strong>
                     <small>Memory resident footprint</small>
                   </article>
                   <article className="service-stat-card">
@@ -646,30 +559,11 @@ export default function Dashboard({
                       <RefreshCw size={15} />
                     </span>
                     <strong>30 Seconds</strong>
-                    <small>Automated background heartbeat</small>
+                    <small>While this page is open</small>
                   </article>
                 </div>
 
-                {/* Live Latency Bar Chart */}
-                <div className="chart-wrapper">
-                  <div className="chart-header">
-                    <span>RECENT PROBE LATENCY SPECTRUM (30 SAMPLES)</span>
-                    <span className="chart-legend">
-                      <span className="legend-dot green" /> Passed (&lt;50ms)
-                      <span className="legend-dot red" /> High Latency
-                    </span>
-                  </div>
-                  <div className="latency-bars">
-                    {(samples.length ? samples : Array.from({ length: 24 }, (_, i) => ({ time: "", ms: 12 + (i % 7) * 4, ok: true }))).map((s, idx) => (
-                      <div
-                        key={idx}
-                        className={`bar-col ${s.ok && s.ms < 100 ? "bar-ok" : "bar-fail"}`}
-                        style={{ height: `${Math.min(100, Math.max(18, s.ms * 2.2))}%` }}
-                        title={`${s.ms} ms at ${s.time ? new Date(s.time).toLocaleTimeString() : "probe"}`}
-                      />
-                    ))}
-                  </div>
-                </div>
+                <LatencyChart samples={samples} />
               </section>
 
               {/* Checks Audit Table */}
@@ -693,19 +587,15 @@ export default function Dashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {(samples.length ? samples.slice().reverse().slice(0, 8) : [
-                        { time: new Date().toISOString(), ms: 12, ok: true },
-                        { time: new Date(Date.now() - 30000).toISOString(), ms: 14, ok: true },
-                        { time: new Date(Date.now() - 60000).toISOString(), ms: 11, ok: true },
-                      ]).map((sample, i) => (
+                      {samples.slice().reverse().slice(0, 8).map((sample, i) => (
                         <tr key={i}>
                           <td className="cell-time">{new Date(sample.time).toLocaleTimeString()}</td>
                           <td><code className="cell-endpoint">GET /health</code></td>
                           <td className="cell-latency">{sample.ms} ms</td>
-                          <td><span className="cell-code">{sample.ok ? "200 OK" : "503 ERROR"}</span></td>
+                          <td><span className="cell-code">{sample.ok ? "200 OK" : "FAILED"}</span></td>
                           <td>
                             <span className={sample.ok ? "badge-success-pill" : "badge-danger-pill"}>
-                              ● {sample.ok ? "PASSED" : "FAILED"}
+                              {sample.ok ? "PASSED" : "FAILED"}
                             </span>
                           </td>
                         </tr>
@@ -717,155 +607,19 @@ export default function Dashboard({
             </div>
           )}
 
-          {/* TAB 4: DEPLOYMENTS (Automated Rollback Engine) */}
-          {tab === "Deployments" && (
-            <div className="deployments-container">
-              {/* Core Feature: Automated Rollback & Verification Simulator */}
-              <section className="production-card simulator-card">
-                <div className="simulator-header">
-                  <div>
-                    <span className="eyebrow-tag">AUTOMATED ROLLBACK & CANARY VERIFIER</span>
-                    <h2>Automated Deployment Resilience Engine</h2>
-                    <p>
-                      Simulate a deployment rollout. If the candidate fails automated health checks, the circuit breaker triggers an instant rollback to the previous stable release.
-                    </p>
-                  </div>
-                  <div className="sim-buttons">
-                    <button
-                      onClick={() => runSimulator("healthy")}
-                      disabled={simState === "running"}
-                      className="sim-healthy-btn"
-                    >
-                      <CheckCircle2 size={16} /> Simulate Healthy Rollout (v1.4.3)
-                    </button>
-                    <button
-                      onClick={() => runSimulator("rollback")}
-                      disabled={simState === "running"}
-                      className="sim-rollback-btn"
-                    >
-                      <AlertTriangle size={16} /> Simulate Failure & Auto-Rollback
-                    </button>
-                  </div>
-                </div>
-
-                {/* Simulator Live Output Terminal */}
-                {simLogs.length > 0 && (
-                  <div className="sim-terminal">
-                    <div className="terminal-header">
-                      <span><Terminal size={14} /> DEVOPS AUTOMATION LOGS</span>
-                      <span className={simState === "running" ? "sim-tag-running" : simState === "healthy" ? "sim-tag-success" : "sim-tag-rollback"}>
-                        {simState === "running" ? "PROBING CANDIDATE..." : simState === "healthy" ? "PROMOTION SUCCESSFUL" : "AUTOMATED ROLLBACK EXECUTED"}
-                      </span>
-                    </div>
-                    <div className="terminal-body">
-                      {simLogs.map((log, i) => (
-                        <div key={i} className={`log-line ${log.includes("CRITICAL") || log.includes("FAILED") ? "log-err" : log.includes("ROLLBACK") ? "log-warn" : log.includes("PASSED") || log.includes("promoted") ? "log-ok" : ""}`}>
-                          {log}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              {/* Recorded Releases Timeline */}
-              <section className="production-card">
-                <h2>Release Timeline & Health Verification</h2>
-                <div className="releases-list">
-                  <div className="release-row active-release">
-                    <div className="release-status-icon success-icon"><Check size={16} /></div>
-                    <div className="release-details">
-                      <strong>{simActiveRelease}</strong>
-                      <p>Verified via automated health check · 5/5 probes clean · Zero downtime</p>
-                    </div>
-                    <span className="release-badge badge-prod">ACTIVE PRODUCTION</span>
-                    <span className="release-time">Just now</span>
-                  </div>
-
-                  <div className="release-row rolled-back-release">
-                    <div className="release-status-icon rollback-icon"><RotateCcw size={16} /></div>
-                    <div className="release-details">
-                      <strong>v1.4.1 (sha-b2f83d)</strong>
-                      <p>Automated Rollback triggered · Health check returned 503 · Restored v1.4.0 in 1.4s</p>
-                    </div>
-                    <span className="release-badge badge-rollback">AUTO ROLLED BACK</span>
-                    <span className="release-time">2 hours ago</span>
-                  </div>
-
-                  <div className="release-row">
-                    <div className="release-status-icon success-icon"><Check size={16} /></div>
-                    <div className="release-details">
-                      <strong>v1.4.0 (sha-a7e39c)</strong>
-                      <p>Initial production deploy · Health check passed</p>
-                    </div>
-                    <span className="release-badge badge-verified">VERIFIED</span>
-                    <span className="release-time">Yesterday</span>
-                  </div>
-                </div>
-              </section>
-
-              {/* GitHub Actions Pipeline History */}
-              <PipelineHistory repository={repository?.name.replace(/\s/g, "")} />
+          {tab === "Deployments" && <PipelineHistory repository={repository?.name.replace(/\s/g, "")} />}
+          {tab === "Settings" && <div className="account-settings">
+            <section className="production-card settings-profile">
+              <span className="settings-avatar"><UserRound size={28}/></span>
+              <div><span className="production-label">YOUR ACCOUNT</span><h2>{user?.name || "Your personal workspace"}</h2><p>{user?.email || "Sign in to save repositories and manage your preferences."}</p></div>
+              <a className="deployment-primary" href={user ? "/workspace" : "/login"}>{user ? "Manage account" : "Sign in"}<ArrowUpRight size={16}/></a>
+            </section>
+            <div className="settings-options">
+              <a className="settings-option" href="/workspace"><GitBranch size={24}/><h2>Saved repositories</h2><p>Keep your projects together and switch between them in a click.</p><span>Manage repositories <ArrowUpRight size={16}/></span></a>
+              <a className="settings-option" href="/workspace#notifications"><Radio size={24}/><h2>Email notifications</h2><p>Manage failure and recovery notification preferences for your account.</p><span>Notification preferences <ArrowUpRight size={16}/></span></a>
             </div>
-          )}
-
-          {/* TAB 5: SETTINGS */}
-          {tab === "Settings" && (
-            <div className="settings-container">
-              <section className="production-card">
-                <h2>DevOps Infrastructure & Configuration</h2>
-                <p>Status of connected deployment channels, cloud infrastructure, and alerting pipelines.</p>
-
-                <div className="settings-grid">
-                  <div className="setting-box">
-                    <div className="setting-header">
-                      <Server size={18} />
-                      <strong>Docker Containerization</strong>
-                    </div>
-                    <p>Multi-stage production build with standalone Node.js runner and container health check.</p>
-                    <span className="setting-status-pill pill-ok">● READY & CONFIGURED</span>
-                  </div>
-
-                  <div className="setting-box">
-                    <div className="setting-header">
-                      <ShieldCheck size={18} />
-                      <strong>AWS Terraform Infrastructure</strong>
-                    </div>
-                    <p>EC2 instance, security group (ports 22, 80, 443), and Elastic IP in <code>terraform/main.tf</code>.</p>
-                    <span className="setting-status-pill pill-ok">● VALIDATED</span>
-                  </div>
-
-                  <div className="setting-box">
-                    <div className="setting-header">
-                      <Zap size={18} />
-                      <strong>Automated Rollback Engine</strong>
-                    </div>
-                    <p>Continuous /health polling with circuit breaker and automated rollback on 3 failed probes.</p>
-                    <span className="setting-status-pill pill-ok">● ARMED</span>
-                  </div>
-
-                  <div className="setting-box">
-                    <div className="setting-header">
-                      <Activity size={18} />
-                      <strong>Failure Notifications</strong>
-                    </div>
-                    <p>Automated Gmail SMTP and Discord webhook dispatches on failure / recovery events.</p>
-                    <span className="setting-status-pill pill-ok">● ACTIVE</span>
-                  </div>
-                </div>
-
-                <div className="workspace-link-panel">
-                  <div>
-                    <h3>Personal Saved Workspace</h3>
-                    <p>Add and manage saved public repositories, notification preferences, and team credentials.</p>
-                  </div>
-                  <a href="/workspace" className="open-workspace-action">
-                    Open Workspace <ArrowUpRight size={16} />
-                  </a>
-                </div>
-              </section>
-            </div>
-          )}
+            <p className="settings-footnote"><ShieldCheck size={16}/> Your account preferences are saved to your personal workspace.</p>
+          </div>}
         </motion.section>
       </div>
     </main>

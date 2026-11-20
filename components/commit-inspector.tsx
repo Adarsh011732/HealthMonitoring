@@ -126,9 +126,8 @@ export default function CommitInspector({
                 <span>+{detail.stats.additions} additions</span>
                 <span>−{detail.stats.deletions} deletions</span>
               </div>
-              <p className="commit-description">
-                {detail.message.split("\n").slice(1).join("\n").trim()}
-              </p>
+              {detail.message.split("\n").slice(1).join("\n").trim() && <details className="commit-notes" key={commit?.sha}><summary>Commit notes</summary><p className="commit-description">{detail.message.split("\n").slice(1).join("\n").trim()}</p></details>}
+              <div className="changed-files-heading">Changed files</div>
               <div className="changed-files">
                 {detail.files.map((f) => (
                   <div key={f.filename} className="changed-file">
