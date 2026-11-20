@@ -43,19 +43,22 @@ export async function GET(request: Request) {
         },
         { status: 403 },
       );
-    let branches: any[] = [];
-    let more = false;
-    for (let page = 1; page <= 5; page++) {
-      const batch = await github(`${input}/branches?per_page=100&page=${page}`);
-      branches.push(...batch);
-      if (batch.length < 100) break;
-      if (page === 5) more = true;
-    }
-    const [raw, tree] = await Promise.all([
+    // These requests depend only on validated public metadata, not each other.
+    const readBranches = async () => {
+      const branches: any[] = [];
+      let more = false;
+      for (let page = 1; page <= 5; page++) {
+        const batch = await github(`${input}/branches?per_page=100&page=${page}`);
+        branches.push(...batch);
+        if (batch.length < 100) break;
+        if (page === 5) more = true;
+      }
+      return { branches, more };
+    };
+    const [{ branches, more }, raw, tree] = await Promise.all([
+      readBranches(),
       github(`${input}/commits?per_page=80`),
-      github(
-        `${input}/git/trees/${encodeURIComponent(repo.default_branch)}?recursive=1`,
-      ),
+      github(`${input}/git/trees/${encodeURIComponent(repo.default_branch)}?recursive=1`),
     ]);
     const extraBranches = branches
       .filter((b) => b.name !== repo.default_branch)

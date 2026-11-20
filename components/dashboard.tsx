@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createAuthClient } from "better-auth/react";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
@@ -165,8 +165,21 @@ export default function Dashboard({
       setLoading(true);
     }
     setError("");
+    // Show a previously visited repository immediately while revalidating it.
     try {
-      const response = await fetch(`/api/repository?repo=${encodeURIComponent(trimmed)}`, { cache: "no-store" });
+      const cached = sessionStorage.getItem(`branchline.repo_cache.${trimmed}`);
+      if (cached) {
+        const snapshot = JSON.parse(cached) as Repository;
+        if (Array.isArray(snapshot.commits) && snapshot.name.replace(/\s/g, "").toLowerCase() === trimmed.toLowerCase()) {
+          setRepository(snapshot);
+          setSelected(snapshot.commits[0]?.sha || "");
+          setCommitQuery("");
+          setConnect(false);
+        }
+      }
+    } catch {}
+    try {
+      const response = await fetch(`/api/repository?repo=${encodeURIComponent(trimmed)}`, { signal: AbortSignal.timeout(30000) });
       const body = await response.json();
       if (version !== requestVersion.current) return;
       if (!response.ok) throw new Error(body.error || "Repository unavailable");
@@ -223,6 +236,10 @@ export default function Dashboard({
   };
 
   const selectedCommit = repository?.commits.find((c) => c.sha === selected);
+  const filteredCommits = useMemo(() => {
+    const query = commitQuery.trim().toLowerCase();
+    return repository?.commits.filter(commit => !query || `${commit.message} ${commit.author} ${commit.sha}`.toLowerCase().includes(query)) || [];
+  }, [repository, commitQuery]);
 
   return (
     <main className="production-dashboard">
@@ -487,7 +504,7 @@ export default function Dashboard({
                   </div>
                   <label className="commit-search">Find a commit<input value={commitQuery} onChange={event => setCommitQuery(event.target.value)} placeholder="Search message, author, or SHA" /></label>
                   <RepositoryGraph
-                    commits={repository.commits.filter(commit => `${commit.message} ${commit.author} ${commit.sha}`.toLowerCase().includes(commitQuery.toLowerCase()))}
+                    commits={filteredCommits}
                     selected={selected}
                     onSelect={setSelected}
                     paused={false}

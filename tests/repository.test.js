@@ -1,6 +1,31 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 
+test("repository snapshot starts commits and tree before branch listing completes", async () => {
+  const { GET } = await import("../app/api/repository/route.ts");
+  const original = global.fetch;
+  const calls = [];
+  let release;
+  const branches = new Promise(resolve => { release = resolve; });
+  try {
+    global.fetch = async url => {
+      const path = String(url);
+      calls.push(path);
+      if (path.includes("/branches?")) { await branches; return Response.json([]); }
+      if (path.includes("/commits?")) return Response.json([]);
+      if (path.includes("/git/trees/")) return Response.json({ tree: [] });
+      return Response.json({ private: false, full_name: "owner/repo", default_branch: "main" });
+    };
+    const pending = GET(new Request("http://localhost/api/repository?repo=owner/repo"));
+    // Drain promise callbacks while the branch response is deliberately held.
+    await new Promise(resolve => setImmediate(resolve));
+    assert.ok(calls.some(path => path.includes("/commits?")));
+    assert.ok(calls.some(path => path.includes("/git/trees/")));
+    release();
+    assert.equal((await pending).status, 200);
+  } finally { release(); global.fetch = original; }
+});
+
 test("repository API rejects malformed paths before fetching", async () => {
   const { GET } = await import("../app/api/repository/route.ts");
   for (const repo of [

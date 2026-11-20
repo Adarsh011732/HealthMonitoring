@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
   GitCommitHorizontal,
@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import type { Commit, Branch } from "../lib/repository";
 
-export default function RepositoryGraph({
+function RepositoryGraph({
   commits,
   selected,
   onSelect,
@@ -28,7 +28,13 @@ export default function RepositoryGraph({
   const reduced = useReducedMotion();
   const scroll = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
-  const visible = commits.slice(0, 28);
+  const visible = useMemo(() => commits.slice(0, 28), [commits]);
+  const positions = useMemo(() => new Map(visible.map((c, i) => [c.sha, i])), [visible]);
+  const branchLabels = useMemo(() => {
+    const labels = new Map<string, Branch[]>();
+    for (const branch of branches) labels.set(branch.sha, [...(labels.get(branch.sha) || []), branch]);
+    return labels;
+  }, [branches]);
   const row = 78;
   const height = Math.max(visible.length * row + 48, 270);
   const point = (i: number, lane: number) => ({
@@ -64,14 +70,14 @@ export default function RepositoryGraph({
             >
               {visible.flatMap((c, i) =>
                 c.parents.map((parent) => {
-                  const j = visible.findIndex((p) => p.sha === parent);
+                  const j = positions.get(parent) ?? -1;
                   if (j < 0) return null;
                   const p = point(i, c.lane),
                     q = point(j, visible[j].lane);
                   const d = `M ${p.x} ${p.y} C ${p.x} ${p.y + 38}, ${q.x} ${q.y - 38}, ${q.x} ${q.y}`;
                   return (
                     <g key={c.sha + parent}>
-                      <motion.path
+                      <path
                         d={d}
                         fill="none"
                         stroke={
@@ -80,14 +86,8 @@ export default function RepositoryGraph({
                             : "#505050"
                         }
                         strokeWidth={c.sha === selected ? 2.5 : 1.5}
-                        initial={{ pathLength: reduced ? 1 : 0 }}
-                        animate={{ pathLength: 1 }}
-                        transition={{
-                          duration: paused || reduced ? 0 : 0.75,
-                          delay: Math.min(i * 0.035, 0.35),
-                        }}
                       />
-                      {!paused && !reduced && (
+                      {c.sha === selected && !paused && !reduced && (
                         <circle r="2" fill="#fff" opacity=".7">
                           <animateMotion
                             dur={`${3 + (i % 3)}s`}
@@ -103,7 +103,7 @@ export default function RepositoryGraph({
             </svg>
             {visible.map((c, i) => {
               const p = point(i, c.lane);
-              const labels = branches.filter((b) => b.sha === c.sha);
+              const labels = branchLabels.get(c.sha) || [];
               return (
                 <motion.button
                   key={c.sha}
@@ -111,11 +111,10 @@ export default function RepositoryGraph({
                   style={{ top: p.y - 25 }}
                   onClick={() => onSelect(c.sha)}
                   aria-pressed={c.sha === selected}
-                  initial={{ opacity: reduced ? 1 : 0, x: reduced ? 0 : -10 }}
+                  initial={false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{
-                    duration: 0.35,
-                    delay: Math.min(i * 0.035, 0.4),
+                    duration: reduced ? 0 : 0.12,
                   }}
                   whileHover={reduced ? {} : { x: 4 }}
                 >
@@ -173,3 +172,5 @@ export default function RepositoryGraph({
     </div>
   );
 }
+
+export default memo(RepositoryGraph);
