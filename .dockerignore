@@ -1,4 +1,7 @@
 node_modules
+.vercel
+.agents
+.codex
 .next
 data
 deploy/runtime.env

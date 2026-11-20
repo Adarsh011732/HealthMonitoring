@@ -1,0 +1,15 @@
+.env*
+.git
+.next
+node_modules
+data
+deploy/runtime.env
+*.pem
+*.key
+*.log
+*.tsbuildinfo
+terraform
+tests
+docs
+.agents
+.codex
