@@ -1,189 +1,193 @@
-# 🛡️ Smart Deployment Health Monitor
+<div align="center">
 
-[![CI / CD](https://github.com/Adarsh011732/HealthMonitoring/actions/workflows/ci.yml/badge.svg)](https://github.com/Adarsh011732/HealthMonitoring/actions/workflows/ci.yml)
-[![Node.js](https://img.shields.io/badge/Node.js-v24.x-339933?logo=node.js)](https://nodejs.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-16.4-black?logo=next.js)](https://nextjs.org/)
-[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker)](https://www.docker.com/)
-[![Terraform](https://img.shields.io/badge/Terraform-AWS%20IaC-844FBA?logo=terraform)](https://www.terraform.io/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+# Branchline
 
-> **DevOps Deployment Automation & Resilience Control Center**  
-> Continuous post-deployment health verification, automated circuit breakers, zero-downtime rollbacks, and instant developer alert dispatches.
+**Smart Deployment Health Monitor**
 
----
+Your repositories, changes, and application health — in one workspace.
 
-## 📌 Executive Summary
+[![Live app](https://img.shields.io/badge/Open_live_app-111111?style=for-the-badge&logo=vercel)](https://branchline-rho.vercel.app)
+[![Docker Hub](https://img.shields.io/badge/Docker_Hub-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/adarshsingh000/branchline)
+[![CI](https://github.com/Adarsh011732/HealthMonitoring/actions/workflows/ci.yml/badge.svg)](https://github.com/Adarsh011732/HealthMonitoring/actions/workflows/ci.yml)
 
-Modern microservice deployments require rapid detection of runtime failures. **Smart Deployment Health Monitor** (Branchline) continuously verifies application health immediately following release promotions. If newly rolled out candidates fail critical health probes, the integrated **Automated Rollback Engine** instantly trips a circuit breaker, halts the failing container, restores the previous verified release in seconds, and dispatches real-time incident reports to developers via Gmail and Discord.
+[Try the dashboard](https://branchline-rho.vercel.app/dashboard/overview) · [Sign in with GitHub](https://branchline-rho.vercel.app/login) · [Report an issue](https://github.com/Adarsh011732/HealthMonitoring/issues)
 
----
+</div>
 
-## 🚀 Key Capabilities
+## Explore the app
 
-### 1. 🔄 Automated Rollback & Canary Verification
-- **Continuous Probing**: Evaluates `/health` endpoints with customizable timeout thresholds and retry intervals.
-- **Circuit Breaker Engine**: Automatically triggers upon 3 consecutive probe failures or crash loops.
-- **Zero-Downtime Rollback**: Instantly switches traffic back to the previous stable release tag in `< 2 seconds`.
-- **Interactive Simulator**: Built-in simulator under the **Deployments** tab allows instant demonstration of healthy promotions (v1.4.3) vs automated failure rollbacks.
+| Section | What you can do |
+| --- | --- |
+| **Overview** | See application health, response times, and recent repository changes. |
+| **Repository** | Explore the commit graph, search commits, inspect changed files and patches, and browse repository metadata. |
+| **Services** | Run health checks, inspect a monochrome latency chart, and export this browser session's check history as CSV. |
+| **Deployments** | Read real GitHub Actions runs and GitHub deployment records for the selected public repository. |
+| **Workspace** | Save public repositories to your account and switch between them without entering their names again. |
+| **Settings** | Access account details, saved repositories, and email notification preferences. |
 
-### 2. 📊 Real-time Microservice Telemetry
-- **Latency Spectrum**: Live 30-sample visual response latency bars with `< 50ms` SLA compliance indicators.
-- **Resource Profiling**: Real-time RSS and V8 Heap memory consumption telemetry.
-- **Audit Trail & CSV Export**: Session inspection history logging timestamps, HTTP status codes, and 1-click CSV download.
+The interface uses a dark monochrome theme, responsive layouts, Motion transitions, and reduced-motion support. GitHub OAuth and Better Auth provide account sessions; MongoDB stores account and workspace data.
 
-### 3. 🌳 Git Commit Topology & Branch Ancestry
-- **Interactive Multi-Lane DAG**: SVG commit tree visualizer tracking branches, tags, and merges.
-- **Commit Inspector**: Side-by-side patch viewer with file change analytics.
-- **Persistent Selection**: Active repository context is preserved across tab transitions and browser refreshes.
+> Services measures the **Branchline instance**, not the deployed website of the selected repository. Health samples belong to the current browser session. GitHub activity depends on what the repository and its hosting provider publish. Scheduled email alerts require the separate monitoring worker described below.
 
-### 4. ☁️ Enterprise Infrastructure as Code (Terraform)
-- **AWS Cloud Provisioning**: Provisions an EC2 instance (`t3.small`), custom Security Groups (ports 22, 80, 443), Elastic IP, and encrypted 20GB EBS storage.
-- **Cloud-Init Bootstrapping**: Automated provisioning of Docker Engine and Docker Compose upon initial boot.
+## How it fits together
 
-### 5. 🔁 GitHub Actions CI/CD Pipeline
-- **Validation Stage**: Linting, type checking, and automated unit testing on every push and pull request.
-- **Containerization**: Multi-stage Docker builds optimized with standalone Next.js runtime.
-- **Continuous Deployment**: Tag-driven releases (`v*`) deploying to AWS EC2 via verified SSH and automated health checks.
-
----
-
-## 🏗️ Architecture & Workflow
-
-```
-               [ Developer Push / Release Tag (v*) ]
-                               │
-                               ▼
-                   [ GitHub Actions CI/CD ]
-                  ┌────────────┴────────────┐
-                  ▼                         ▼
-         [ 100% Unit Tests ]       [ Multi-Stage Docker ]
-                  │                         │
-                  └────────────┬────────────┘
-                               ▼
-                    [ Push to Docker Hub ]
-                               │
-                      (Secure SSH Deploy)
-                               ▼
-                   [ AWS EC2 / Production VM ]
-                  ┌────────────┴────────────┐
-                  ▼                         ▼
-            [ Caddy Proxy ]       [ Next.js Container ]
-            (Ports 80/443)              (Port 3001)
-                                            │
-                                  (/health Monitoring)
-                                            │
-                      ┌─────────────────────┴─────────────────────┐
-                      ▼                                           ▼
-             [ Health Checks PASS ]                      [ 3 Probes FAIL ]
-                      │                                           │
-             [ Promote Candidate ]                      [ CIRCUIT BREAKER ]
-             (Zero-Downtime Active)                               │
-                                                        [ AUTOMATED ROLLBACK ]
-                                                        (Restore Last Stable)
-                                                                  │
-                                                        [ Alert Dispatched ]
-                                                        (Gmail SMTP & Discord)
+```mermaid
+flowchart LR
+    Browser[Browser] --> Web[Next.js app on Vercel]
+    Browser -. Alternative hosting .-> Docker[Standalone Docker container]
+    Web --> GitHub[GitHub API and OAuth]
+    Web --> MongoDB[(MongoDB)]
+    Docker --> GitHub
+    Docker --> MongoDB
+    Worker[Optional monitoring worker] --> GitHub
+    Worker --> MongoDB
+    Worker --> SMTP[SMTP email]
 ```
 
----
+| Layer | Technology |
+| --- | --- |
+| Interface | Next.js App Router, React, TypeScript, Motion, Lucide |
+| Server | Next.js Route Handlers, Node.js |
+| Identity | Better Auth, GitHub OAuth |
+| Storage | MongoDB |
+| Hosting | Vercel; Docker as an alternative |
+| Checks | Node test runner, TypeScript, production build, Docker build |
 
-## 🛠️ Tech Stack
+## Run it yourself
 
-| Domain | Technology |
-| :--- | :--- |
-| **Frontend & Control Center** | Next.js 16 (App Router), React 19, Motion (Framer), Lucide Icons |
-| **Backend & Microservice** | Node.js v24, Express API, Next.js Route Handlers |
-| **Authentication & Sessions** | Better Auth, GitHub OAuth, Secure Session Engine |
-| **Database & Resilience** | MongoDB Atlas with zero-dependency Local JSON database fallback |
-| **Containerization** | Docker, Docker Compose, Multi-stage standalone build |
-| **Infrastructure as Code** | HashiCorp Terraform (AWS Provider) |
-| **CI / CD Automation** | GitHub Actions (CI & Production Deploy workflows) |
-| **Monitoring & Notifications**| Nodemailer (TLS SMTP), Discord Webhooks, Native Fetch |
+<details>
+<summary><strong>Local development</strong></summary>
 
----
+Install Node.js 24 or later and provide a MongoDB database and GitHub OAuth app for account features.
 
-## ⚡ Quick Start (Local Setup)
-
-### 1. Clone & Install
 ```bash
 git clone https://github.com/Adarsh011732/HealthMonitoring.git
 cd HealthMonitoring
-npm install
+npm ci
 ```
 
-### 2. Configure Environment
-Create `.env.local` by copying the template:
-```bash
-cp .env.example .env.local
-```
-*(Configure `GITHUB_CLIENT_ID`, `SMTP_USER`, and `SMTP_APP_PASSWORD` as needed).*
+Copy `.env.example` to `.env.local` and configure the required values:
 
-### 3. Run Automated Tests
-```bash
-npm test
-```
-All 8 test suites will execute:
-- Commit validation & sanitization
-- Email alert delivery & TLS security
-- Server routing & microservice health endpoints
-- Repository ancestry & signal parsing
+| Variable | Purpose |
+| --- | --- |
+| `MONGODB_URI` | MongoDB connection string |
+| `MONGODB_DB` | Database name |
+| `BETTER_AUTH_SECRET` | Random authentication secret, at least 32 characters |
+| `BETTER_AUTH_URL` | `http://localhost:3001` for local development |
+| `GITHUB_CLIENT_ID` | GitHub OAuth app client ID |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth app client secret |
 
-### 4. Start Development Server
+Generate an authentication secret with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` and store it only in your environment configuration.
+
+For the local OAuth app, use `http://localhost:3001` as the homepage and `http://localhost:3001/api/auth/callback/github` as the callback. A separate OAuth app avoids changing the production callback when developing locally.
+
 ```bash
+npm run db:setup
 npm run dev
 ```
-Open **[http://localhost:3001](http://localhost:3001)** to view the live dashboard!
 
----
+Open [localhost:3001](http://localhost:3001). MongoDB must allow connections from your machine. Never commit `.env.local`.
 
-## ☁️ Infrastructure Deployment (AWS Terraform)
+</details>
 
-To provision production AWS infrastructure:
+<details>
+<summary><strong>Docker — pull the published image</strong></summary>
+
+Published image: [`adarshsingh000/branchline`](https://hub.docker.com/r/adarshsingh000/branchline), with `latest` and `1.0.0` tags. The current image targets Linux AMD64.
 
 ```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply -var="key_name=your-aws-keypair"
+docker pull adarshsingh000/branchline:1.0.0
+docker run -d --name branchline --restart unless-stopped -p 3001:3000 --env-file .env.local adarshsingh000/branchline:1.0.0
 ```
 
-Outputs:
-- `instance_public_ip`: Elastic Public IP of your production server.
-- `app_url`: Ready-to-browse production health monitor link.
+Open [localhost:3001](http://localhost:3001). Supply your own runtime environment file and configure OAuth for the URL you use. Credentials are excluded from the image.
+
+To build and run from source:
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose down
+```
+
+The multi-stage image runs the standalone Next.js server as a non-root user and includes a `/health` health check.
+
+</details>
+
+<details>
+<summary><strong>Deploy to Vercel</strong></summary>
+
+1. Import the repository into Vercel with the Next.js framework preset, or deploy using the CLI below.
+2. Add the required environment variables from the local setup section to Vercel's production environment.
+3. Set `BETTER_AUTH_URL` to your production HTTPS URL.
+4. Configure the GitHub OAuth homepage to that URL and callback to `https://YOUR_HOST/api/auth/callback/github`.
+5. Allow the hosting environment to connect to MongoDB and redeploy after environment changes.
+
+```bash
+npx vercel deploy --prod
+```
+
+The current live app is **https://branchline-rho.vercel.app**. Its callback is `https://branchline-rho.vercel.app/api/auth/callback/github`.
+
+Vercel hosts the web application. The optional persistent worker needs a separate host.
+
+</details>
+
+<details>
+<summary><strong>Optional email monitoring worker</strong></summary>
+
+The web app lets signed-in users manage notification preferences. Automatic workflow notifications require running the worker separately; the live Vercel deployment alone does not run this process.
+
+Configure `SMTP_USER`, `SMTP_APP_PASSWORD`, and the email settings documented in `.env.example`. `GITHUB_TOKEN` is optional for server-side GitHub API requests. Google OAuth is also optional and requires both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+
+```bash
+npm run monitor:pipelines
+```
+
+Keep the process running on a persistent host. See [deployment instructions](docs/RUN_AND_DEPLOY.md) for operational details.
+
+</details>
+
+## Project map
+
+```text
+app/           Pages, layouts, styles, and API route handlers
+components/    Dashboard, login, workspace, charts, and repository UI
+lib/           Authentication, MongoDB, session, and GitHub integrations
+scripts/       Database setup and the optional monitoring worker
+tests/         Automated checks and isolated test data
+docs/          Setup, deployment, and recovery notes
+Dockerfile     Standalone production image
+compose.yaml   Local container configuration
+vercel.json    Vercel build configuration
+```
+
+Older infrastructure and legacy server files may remain in the repository for reference; they are outside the current Vercel deployment path. The current dashboard does not simulate releases or claim automated production rollbacks.
+
+## API quick reference
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Instance health, uptime, and memory |
+| GET | `/api/repository?repo=owner/name` | Public repository snapshot |
+| GET | `/api/commit?repo=owner/name&sha=COMMIT_SHA` | Commit details and file patches |
+| GET | `/api/pipelines?repo=owner/name` | Workflow runs and deployment records |
+| GET / POST | `/api/workspace` | Account-scoped repositories and preferences; sign-in required |
+| GET / POST | `/api/auth/*` | Authentication endpoints |
+
+## Verification
+
+```bash
+npm run typecheck
+npm test
+npm run build
+docker build -t branchline:latest .
+```
+
+The current release passed type checking, eight automated tests, a production build, and a Docker container health smoke test. Desktop and mobile browser checks were performed during UI recovery. GitHub Actions defines test, production-build, and Docker-build checks; the badge above links to the actual workflow status.
 
 ---
 
-## 🔐 GitHub Secrets Configuration
+Built by **Adarsh Singh** for the CSE DevOps project.
+[Live app](https://branchline-rho.vercel.app) · [Source](https://github.com/Adarsh011732/HealthMonitoring) · [Container](https://hub.docker.com/r/adarshsingh000/branchline)
 
-For automated CI/CD pipeline deployment to AWS EC2:
-
-| Secret | Description |
-| :--- | :--- |
-| `DOCKERHUB_USER` | Docker Hub username |
-| `DOCKERHUB_TOKEN` | Docker Hub Personal Access Token |
-| `EC2_HOST` | Public IP of the AWS EC2 instance |
-| `EC2_USER` | OS username (typically `ubuntu`) |
-| `EC2_KEY` | Private SSH key (`.pem`) contents |
-| `SSH_KNOWN_HOSTS`| EC2 host SSH fingerprint |
-| `DISCORD_WEBHOOK_URL` | Optional Discord channel webhook for incident alerts |
-
----
-
-## 📡 API Reference
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/health` | Live microservice telemetry (uptime, environment, memory RSS/heap) |
-| `GET` | `/api/repository?repo=owner/name` | Fetches branches, commit ancestry graph, and source tree |
-| `GET` | `/api/pipelines?repo=owner/name` | GitHub Actions workflow execution history |
-| `POST`| `/api/commit` | Verifies commit patches and code changes |
-| `GET` | `/api/workspace` | Saved repositories and alert preferences |
-
----
-
-## 👨‍💻 Project Information
-
-- **Project**: Smart Deployment Health Monitor
-- **Course**: CSE DevOps Engineering
-- **Author**: Adarsh Singh
-- **Repository**: [https://github.com/Adarsh011732/HealthMonitoring](https://github.com/Adarsh011732/HealthMonitoring)
